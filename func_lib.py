@@ -3,6 +3,7 @@ from datetime import timedelta
 from copy import copy
 from re import compile
 import matplotlib.pyplot as plt
+import numpy as np
 import itertools
 
 
@@ -51,7 +52,7 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
                         time = match2.group('time')
                         cur_time = datetime.strptime(time, time_format)
                         time_delta = cur_time - (time_last if time_last != datetime.min else cur_time)
-                        if time_delta > timedelta(minutes=2):
+                        if time_delta > timedelta(seconds=2):
                             time_delta = timedelta(microseconds=200)
                         time_counter += time_delta
                         time_last = copy(cur_time)
@@ -73,22 +74,56 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
 
 
 def plot_plot(file_to_read='result.txt'):
-    xaxix = []
-    yaxix = []
+    koef = 0.88
+    intensity = 112
+    x_axix = []
+    y_axix = []
     match_str = compile(r'(?P<time>\S+) (?P<doze>[\d|.]+)')
-    with open(file_to_read, 'r') as f:
-        for line in f:
-            match = match_str.match(line.strip())
-            if match is not None:
-                delta = datetime.strptime(match.group('time'), '%H:%M:%S.%f')
-                x = delta.time()
-                y = float(match.group('doze'))
-                xaxix.append(x)
-                yaxix.append(y)
-        # plt.yscale('Ток')
-        # plt.xscale('Доза')
-        print(xaxix)
-        print(yaxix)
+    with open('result_doze_to_current.txt', 'w') as fwriter:
+        with open(file_to_read, 'r') as f:
+            for line in f:
+                match = match_str.match(line.strip())
+                if match is not None:
+                    mtime = match.group('time')
+                    try:
+                        elapsed = datetime.strptime(mtime, '%H:%M:%S.%f')
+                    except ValueError:
+                        mtime += '.000'
+                        elapsed = datetime.strptime(mtime, '%H:%M:%S.%f')
+                    x = ((elapsed.hour * 3600 + elapsed.minute * 60 + elapsed.second +
+                          elapsed.microsecond / 1_000_000) * koef * intensity) / 1000
+                    y = float(match.group('doze'))*1_000_000
+                    fwriter.write(f'{x:.3f}\t{y:.3f}\n')
+                    x_axix.append(x)
+                    y_axix.append(y)
+
+    plt.plot(x_axix, y_axix)
+    plt.savefig('plot.png')
+    plt.show()
+
+
+def test():
+    # import matplotlib.pyplot as plt
+    # import matplotlib.dates as mdates
+    import datetime as dt
+
+    np.random.seed(1)
+
+    N = 100
+    y = np.random.rand(N)
+
+    now = dt.datetime.now()
+    print(type(now))
+    then = now + dt.timedelta(days=100)
+    print(type(then))
+    days = mdates.drange(now, then, dt.timedelta(days=1))
+
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=5))
+    plt.plot(days, y)
+    plt.gcf().autofmt_xdate()
+    plt.show()
+
 
 if __name__ == '__main__':
     import sys
