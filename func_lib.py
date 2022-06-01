@@ -1,10 +1,10 @@
+from copy import copy
 from datetime import datetime
 from datetime import timedelta
-from copy import copy
 from re import compile
+
 import matplotlib.pyplot as plt
 import numpy as np
-import itertools
 
 
 def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
@@ -31,15 +31,13 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
     time_last = datetime.min
     time_counter = timedelta(0, 0, 0)
     lines_number = 0
-    # mes_format1 = compile(r'^\D')
-    mes_format2 = compile(pattern)
+    mes_format1 = compile(pattern)
     # r'(?P<date>\d{2}\.\d{2}\.\d{2}) (?P<time>\d{2}:\d{2}:\d{2}),(?P<millisec>\d+)\s+(?P<doze>[^\s]+).+')
     with open(unknowns, 'w') as un_res:
         with open(output, 'w') as res:
             with open(logfile, 'r', newline='') as f:
                 for ind, line in enumerate(f):
-                    # match1 = mes_format1.match(line)
-                    match1 = mes_format2.match(line)
+                    match1 = mes_format1.match(line)
                     try:
                         doze = match1.group('doze')
                         if doze == 'NaN':
@@ -60,7 +58,7 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
                         time_counter += time_delta
                         time_last = copy(cur_time)
                         datecorrect = True
-                    except (ValueError, AttributeError) as e:
+                    except (ValueError, AttributeError):
                         datecorrect = False
                     if not all((match1 is not None, doze_correct, datecorrect)):
                         un_res.write(f"Unknown line at {ind + 1}: '{line.strip()}'\n")
@@ -84,8 +82,7 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
 
     return (f'NaNs: {nan_count}\n'
             f'Unknown lines: {unknown_count}\n'
-            f'Lines decoded: {lines_number}'), \
-           error_flag
+            f'Lines decoded: {lines_number}'), error_flag
 
 
 def plot_plot(file_to_read='result.txt', inten=112, outimage='plot.png', dut_name="Образец 1", trend=False,
@@ -108,16 +105,18 @@ def plot_plot(file_to_read='result.txt', inten=112, outimage='plot.png', dut_nam
                         elapsed = datetime.strptime(mtime, '%H:%M:%S.%f')
                     x = ((elapsed.hour * 3600 + elapsed.minute * 60 + elapsed.second +
                           elapsed.microsecond / 1_000_000) * koef * intensity) / 1000
-                    y = float(match.group('doze')) * 1_000
+                    y = float(match.group('doze'))  # * 1_000
                     fwriter.write(f'{x:.3f}\t{y:.3f}\n')
                     x_axix.append(x)
                     y_axix.append(y)
 
-    plt.title(f'Зависимость тока потребления \nот накопленной дозы')
-    plt.ticklabel_format(axis="y", style="sci", scilimits=(1, 0), useMathText=True)
+    plt.suptitle(f'Зависимость тока потребления от накопленной дозы', fontsize=13)
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True, useLocale=False)
     plt.xlabel('Накопленная доза, кРад')
     plt.ylabel('Ток, мА')
     plt.plot(x_axix, y_axix, '-0', label=dut_name)
+    plt.minorticks_on()
+
     if trend:
         xnp = np.array(x_axix)
         ynp = np.array(y_axix)
@@ -130,29 +129,6 @@ def plot_plot(file_to_read='result.txt', inten=112, outimage='plot.png', dut_nam
     plt.grid()
     plt.tight_layout()
     plt.savefig(outimage)
-    plt.show()
-
-
-def test():
-    # import matplotlib.pyplot as plt
-    # import matplotlib.dates as mdates
-    import datetime as dt
-
-    np.random.seed(1)
-
-    N = 100
-    y = np.random.rand(N)
-
-    now = dt.datetime.now()
-    print(type(now))
-    then = now + dt.timedelta(days=100)
-    print(type(then))
-    days = mdates.drange(now, then, dt.timedelta(days=1))
-
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=5))
-    plt.plot(days, y)
-    plt.gcf().autofmt_xdate()
     plt.show()
 
 

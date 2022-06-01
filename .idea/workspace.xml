@@ -70,17 +70,12 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/func_lib.py</url>
-          <line>82</line>
-          <option name="timeStamp" value="33" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/func_lib.py</url>
-          <line>64</line>
+          <line>62</line>
           <option name="timeStamp" value="34" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/func_lib.py</url>
-          <line>41</line>
+          <line>39</line>
           <option name="timeStamp" value="36" />
         </line-breakpoint>
       </breakpoints>

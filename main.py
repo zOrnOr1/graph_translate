@@ -1,6 +1,5 @@
 from func_lib import files_r_w
 from func_lib import plot_plot
-from func_lib import test
 
 
 def main(argv):
