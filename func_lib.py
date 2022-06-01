@@ -84,7 +84,8 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
            error_flag
 
 
-def plot_plot(file_to_read='result.txt', inten=112, outimage='plot.png', dut_name="Образец 1"):
+def plot_plot(file_to_read='result.txt', inten=112, outimage='plot.png', dut_name="Образец 1", trend=False,
+              trend_poly_pow=5):
     koef = 0.88
     intensity = inten
     x_axix = []
@@ -103,7 +104,7 @@ def plot_plot(file_to_read='result.txt', inten=112, outimage='plot.png', dut_nam
                         elapsed = datetime.strptime(mtime, '%H:%M:%S.%f')
                     x = ((elapsed.hour * 3600 + elapsed.minute * 60 + elapsed.second +
                           elapsed.microsecond / 1_000_000) * koef * intensity) / 1000
-                    y = float(match.group('doze'))*1_000
+                    y = float(match.group('doze')) * 1_000
                     fwriter.write(f'{x:.3f}\t{y:.3f}\n')
                     x_axix.append(x)
                     y_axix.append(y)
@@ -113,6 +114,14 @@ def plot_plot(file_to_read='result.txt', inten=112, outimage='plot.png', dut_nam
     plt.xlabel('Накопленная доза, кРад')
     plt.ylabel('Ток, мА')
     plt.plot(x_axix, y_axix, '-0', label=dut_name)
+    if trend:
+        xnp = np.array(x_axix)
+        ynp = np.array(y_axix)
+        z = np.polyfit(xnp, ynp, trend_poly_pow)
+        p = np.poly1d(z)
+        print(f'Использованный полином:')
+        print(p)
+        plt.plot(xnp, p(xnp), '--r', label='Trend')
     plt.legend(loc='lower right')
     plt.grid()
     plt.tight_layout()
