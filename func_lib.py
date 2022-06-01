@@ -31,17 +31,17 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
     time_last = datetime.min
     time_counter = timedelta(0, 0, 0)
     lines_number = 0
-    mes_format1 = compile(r'^\D')
+    # mes_format1 = compile(r'^\D')
     mes_format2 = compile(pattern)
     # r'(?P<date>\d{2}\.\d{2}\.\d{2}) (?P<time>\d{2}:\d{2}:\d{2}),(?P<millisec>\d+)\s+(?P<doze>[^\s]+).+')
     with open(unknowns, 'w') as un_res:
         with open(output, 'w') as res:
             with open(logfile, 'r', newline='') as f:
                 for ind, line in enumerate(f):
-                    match1 = mes_format1.match(line)
-                    match2 = mes_format2.match(line)
+                    # match1 = mes_format1.match(line)
+                    match1 = mes_format2.match(line)
                     try:
-                        doze = match2.group('doze')
+                        doze = match1.group('doze')
                         if doze == 'NaN':
                             nan_count += 1
                             un_res.write(f"NaN at {ind + 1}. Replaced with last value: '{doze_last.strip()}'\n")
@@ -49,10 +49,10 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
                         else:
                             float(doze.replace(',', '.'))
                         doze_correct = True
-                    except (ValueError, AttributeError) as e:
+                    except (ValueError, AttributeError):
                         doze_correct = False
                     try:
-                        time = match2.group('time')
+                        time = match1.group('time')
                         cur_time = datetime.strptime(time, time_format)
                         time_delta = cur_time - (time_last if time_last != datetime.min else cur_time)
                         if time_delta > timedelta(seconds=2):
@@ -62,7 +62,7 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
                         datecorrect = True
                     except (ValueError, AttributeError) as e:
                         datecorrect = False
-                    if not any((match1 is None, doze_correct, datecorrect)):
+                    if not all((match1 is not None, doze_correct, datecorrect)):
                         un_res.write(f"Unknown line at {ind + 1}: '{line.strip()}'\n")
                         unknown_count += 1
                         continue
@@ -76,6 +76,10 @@ def files_r_w(logfile, output='result.txt', unknowns='unknown_result.txt',
                             print(f'Set limit ({limit}) is too low, no points to draw')
                             error_flag = 1
                             break
+                        except ValueError:
+                            un_res.write(f"Unknown line at {ind + 1}: '{line.strip()}'\n")
+                            unknown_count += 1
+                            continue
                     lines_number += 1
 
     return (f'NaNs: {nan_count}\n'
